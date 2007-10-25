@@ -63,7 +63,7 @@
 			 (#x2 (set-endianness :big-endian) :msb)))
    (value id-version	(unsigned-byte 8))
    (value nil		(unsigned-byte 8) :ignore t)
-   (value id-name	(sequence 8 :element-type (unsigned-byte 8) :format :vector))
+   (value id-name	(sequence 8 :element-type (unsigned-byte 8) :stride 1 :format :vector))
    (match type		(unsigned-byte 16)
 			((#x0 :et-none) (#x1 :et-rel) (#x2 :et-exec) (#x3 :et-dyn)
 			 (#x4 :et-core) (#xff00 :et-loproc) (#xffff :et-hiproc)))
