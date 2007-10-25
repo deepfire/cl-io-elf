@@ -53,7 +53,7 @@
 (defbintype ehdr
   (:documentation "ELF header")
   (:fields
-   (match id-magic	(list 4 :element-type (unsigned-byte 8) :stride 1)
+   (match id-magic	(sequence 4 :element-type (unsigned-byte 8) :stride 1 :format :list)
 	 		(((#x7f #x45 #x4c #x46) t)))
    (match id-class	(unsigned-byte 8)
 	 		((#x0 :none) (#x1 :32) (#x2 :64)))
@@ -63,7 +63,7 @@
 			 (#x2 (set-endianness :big-endian) :msb)))
    (value id-version	(unsigned-byte 8))
    (value nil		(unsigned-byte 8) :ignore t)
-   (value id-name	(vector 8 :element-type (unsigned-byte 8)))
+   (value id-name	(sequence 8 :element-type (unsigned-byte 8) :format :vector))
    (match type		(unsigned-byte 16)
 			((#x0 :et-none) (#x1 :et-rel) (#x2 :et-exec) (#x3 :et-dyn)
 			 (#x4 :et-core) (#xff00 :et-loproc) (#xffff :et-hiproc)))
@@ -91,9 +91,9 @@
    (value shentsize	(unsigned-byte 16))
    (value shnum		(unsigned-byte 16))
    (value shstrndx	(unsigned-byte 16))
-   (value phdrs		(list (value (sub *self* 'phnum)) :element-type 'phdr :stride (value (sub *self* 'phentsize)))
+   (value phdrs		(sequence (value (sub *self* 'phnum)) :element-type 'phdr :stride (value (sub *self* 'phentsize)) :format :list)
 	  		:out-of-stream-offset (value (sub *self* 'phoff)))
-   (value shdrs		(list (value (sub *self* 'shnum)) :element-type 'shdr :stride (value (sub *self* 'shentsize)))
+   (value shdrs		(sequence (value (sub *self* 'shnum)) :element-type 'shdr :stride (value (sub *self* 'shentsize)) :format :list)
 	  		:out-of-stream-offset (value (sub *self* 'shoff)))))
 
 (mapc (compose #'export-bintype-accessors #'bintype) '(ehdr phdr shdr))
