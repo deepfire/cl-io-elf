@@ -26,9 +26,10 @@
 (defbintype shdr
   (:documentation "ELF section header")
   (:fields
-   (value name	  	;(value :null-terminated-string)		;; final type
-	          	;(ref (parent) 'shdr (ref (parent) 'shstrndx))	;; dependency
-			(unsigned-byte 32))
+   (indirect		(unsigned-byte 32)
+      (value name	(zero-terminated-symbol 32 :elf)
+			:out-of-stream-offset  (+ (value (sub (sub (parent *self*) (value (sub (parent (parent *self*)) 'shstrndx))) 'offt))
+						  *direct-value*)))
    (match type		(unsigned-byte 32)
 	 		((#x0 :sht-null) (#x1 :sht-progbits) (#x2 :sht-symtab)
 			 (#x3 :sht-strtab) (#x4 :sht-rela) (#x5 :sht-hash)
@@ -54,7 +55,7 @@
   (:documentation "ELF header")
   (:fields
    (match id-magic	(sequence 4 :element-type (unsigned-byte 8) :stride 1 :format :list)
-	 		(((#x7f #x45 #x4c #x46) t)))
+	 		(((#x7f #x45 #x4c #x46))) :ignore t)
    (match id-class	(unsigned-byte 8)
 	 		((#x0 :none) (#x1 :32) (#x2 :64)))
    (match id-data	(unsigned-byte 8)
@@ -91,14 +92,14 @@
    (value shentsize	(unsigned-byte 16))
    (value shnum		(unsigned-byte 16))
    (value shstrndx	(unsigned-byte 16))
-   (value phdrs		(sequence (value (sub *self* 'phnum)) :element-type 'phdr :stride (value (sub *self* 'phentsize)) :format :list)
+   (value phdrs		(sequence (value (sub *self* 'phnum)) :element-type phdr :stride (value (sub *self* 'phentsize)) :format :list)
 	  		:out-of-stream-offset (value (sub *self* 'phoff)))
-   (value shdrs		(sequence (value (sub *self* 'shnum)) :element-type 'shdr :stride (value (sub *self* 'shentsize)) :format :list)
+   (value shdrs		(sequence (value (sub *self* 'shnum)) :element-type shdr :stride (value (sub *self* 'shentsize)) :format :list)
 	  		:out-of-stream-offset (value (sub *self* 'shoff)))))
 
 (mapc (compose #'export-bintype-accessors #'bintype) '(ehdr phdr shdr))
 
-;; (let ((test-file-name "/bin/ls"))
+;; (let ((test-file-name "/home/deepfire/bin/ls"))
 ;;   (format t "testing ~S:~%~S~%"
 ;; 	  test-file-name
 ;; 	  (with-open-file (str test-file-name :element-type '(unsigned-byte 8))
