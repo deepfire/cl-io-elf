@@ -5,7 +5,7 @@
 
 (in-package :elf)
 
-(defbintype phdr
+(defbintype phdr ()
   (:documentation "ELF program header")
   (:fields
    (match type		(unsigned-byte 32)
@@ -23,12 +23,13 @@
    (value flags		(unsigned-byte 32))
    (value align		(unsigned-byte 32))))
 
-(defbintype shdr
+(defbintype shdr ()
   (:documentation "ELF section header")
   (:fields
    (indirect		(unsigned-byte 32)
       (value name	(zero-terminated-symbol 32 :elf)
-			:out-of-stream-offset  (+ (value (sub (sub (parent *self*) (value (sub (parent (parent *self*)) 'shstrndx))) 'offt))
+			:out-of-stream-offset  (+ (path-value *self* :parent
+							      (path-value *self* '(:typed-parent ehdr) 'shstrndx) 'offt)
 						  *direct-value*)))
    (match type		(unsigned-byte 32)
 	 		((#x0 :sht-null) (#x1 :sht-progbits) (#x2 :sht-symtab)
@@ -51,7 +52,7 @@
    (value addralign	(unsigned-byte 32))
    (value entsize	(unsigned-byte 32))))
 
-(defbintype ehdr
+(defbintype ehdr ()
   (:documentation "ELF header")
   (:fields
    (match id-magic	(sequence 4 :element-type (unsigned-byte 8) :stride 1 :format :list)
@@ -92,10 +93,10 @@
    (value shentsize	(unsigned-byte 16))
    (value shnum		(unsigned-byte 16))
    (value shstrndx	(unsigned-byte 16))
-   (value phdrs		(sequence (value (sub *self* 'phnum)) :element-type phdr :stride (value (sub *self* 'phentsize)) :format :list)
-	  		:out-of-stream-offset (value (sub *self* 'phoff)))
-   (value shdrs		(sequence (value (sub *self* 'shnum)) :element-type shdr :stride (value (sub *self* 'shentsize)) :format :list)
-	  		:out-of-stream-offset (value (sub *self* 'shoff)))))
+   (value phdrs		(sequence (path-value *self* 'phnum) :element-type phdr :stride (path-value *self* 'phentsize) :format :list)
+	  		:out-of-stream-offset (path-value *self* 'phoff))
+   (value shdrs		(sequence (path-value *self* 'shnum) :element-type shdr :stride (path-value *self* 'shentsize) :format :list)
+	  		:out-of-stream-offset (path-value *self* 'shoff))))
 
 (mapc (compose #'export-bintype-accessors #'bintype) '(ehdr phdr shdr))
 
