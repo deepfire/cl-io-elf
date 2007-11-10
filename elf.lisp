@@ -31,6 +31,11 @@
 			:out-of-stream-offset  (+ (path-value *self* :parent
 							      (path-value *self* '(:typed-parent ehdr) 'shstrndx) 'offt)
 						  *direct-value*)))
+;;    (value name-offset   (unsigned-byte 32) :ignore t)
+;;    (value name          (zero-terminated-symbol 32 :elf)
+;;                         :out-of-stream-offset  (+ (path-value *self* :parent
+;;                                                               (path-value *self* '(:typed-parent ehdr) 'shstrndx) 'offt)
+;;                                                   (path-value *self* 'name-offset)))
    (match type		(unsigned-byte 32)
 	 		((#x0 :sht-null) (#x1 :sht-progbits) (#x2 :sht-symtab)
 			 (#x3 :sht-strtab) (#x4 :sht-rela) (#x5 :sht-hash)
