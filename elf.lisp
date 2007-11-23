@@ -110,4 +110,4 @@
 ;; 	  test-file-name
 ;; 	  (with-open-file (str test-file-name :element-type '(unsigned-byte 8))
 ;; 	    (let ((seq (captured-stream:make-captured-stream str)))
-;; 	      (parse (bintype 'ehdr) seq)))))
+;; 	      (parse 'ehdr seq)))))
