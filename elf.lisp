@@ -59,6 +59,7 @@
 
 (defbintype ehdr ()
   (:documentation "ELF header")
+  (:type :structure)
   (:fields
    (match id-magic	(sequence 4 :element-type (unsigned-byte 8) :stride 1 :format :list)
 	 		(((#x7f #x45 #x4c #x46))) :ignore t)
