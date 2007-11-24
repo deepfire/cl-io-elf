@@ -1,7 +1,8 @@
 (defpackage elf
   (:use :common-lisp :alexandria :bintype)
   (:export
-   #:phdr #:shdr #:ehdr))
+   #:phdr #:shdr #:ehdr
+   #:shdr-loadable-p))
 
 (in-package :elf)
 
@@ -55,7 +56,8 @@
    (value link		(unsigned-byte 32))
    (value info		(unsigned-byte 32))
    (value addralign	(unsigned-byte 32))
-   (value entsize	(unsigned-byte 32))))
+   (value entsize	(unsigned-byte 32))
+   (value data          (displaced-u8-vector (path-value *self* 'size)) :out-of-stream-offset (path-value *self* 'offt))))
 
 (defbintype ehdr ()
   (:documentation "ELF header")
@@ -104,7 +106,12 @@
    (value shdrs		(sequence (path-value *self* 'shnum) :element-type shdr :stride (path-value *self* 'shentsize) :format :list)
 	  		:out-of-stream-offset (path-value *self* 'shoff))))
 
-(mapc (compose #'export-bintype-accessors #'bintype) '(ehdr phdr shdr))
+(defun shdr-loadable-p (shdr)
+  (with-slots (size flags type) shdr
+    (not (or (and (not (or (ldb-test (byte 1 0) flags) (ldb-test (byte 1 1) flags) (ldb-test (byte 1 2) flags))))
+             (zerop size) (eq type :nobits)))))
+
+(mapc (compose #'export-bintype #'bintype) '(ehdr phdr shdr))
 
 ;; (let ((test-file-name "/home/deepfire/bin/ls"))
 ;;   (format t "testing ~S:~%~S~%"
