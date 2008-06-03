@@ -109,7 +109,7 @@
 (defun shdr-loadable-p (shdr)
   (with-slots (size flags type) shdr
     (not (or (and (not (or (ldb-test (byte 1 0) flags) (ldb-test (byte 1 1) flags) (ldb-test (byte 1 2) flags))))
-             (zerop size) (eq type :nobits)))))
+             (zerop size) (eq type :sht-nobits)))))
 
 (mapc (compose #'export-bintype #'bintype) '(ehdr phdr shdr))
 
