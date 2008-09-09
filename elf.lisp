@@ -2,7 +2,7 @@
   (:use :common-lisp :alexandria :bintype)
   (:export
    #:phdr #:shdr #:ehdr
-   #:shdr-loadable-p))
+   #:shdr-loadable-p #:shdr-executable-p))
 
 (in-package :elf)
 
@@ -110,6 +110,9 @@
   (with-slots (size flags type) shdr
     (not (or (and (not (or (ldb-test (byte 1 0) flags) (ldb-test (byte 1 1) flags) (ldb-test (byte 1 2) flags))))
              (zerop size) (eq type :sht-nobits)))))
+
+(defun shdr-executable-p (shdr)
+  (ldb-test (byte 1 2) (shdr-flags shdr)))
 
 (mapc (compose #'export-bintype #'bintype) '(ehdr phdr shdr))
 
