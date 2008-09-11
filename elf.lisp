@@ -1,8 +1,10 @@
 (defpackage elf
-  (:use :common-lisp :alexandria :bintype)
+  (:use :common-lisp :alexandria :bintype :iterate :pergamum)
   (:export
    #:phdr #:shdr #:ehdr
-   #:shdr-loadable-p #:shdr-executable-p))
+   #:section #:simple-section #:standard-section #:section-name #:section-executable-p
+   #:shdr-loadable-p #:shdr-executable-p
+   #:ehdr-sections))
 
 (in-package :elf)
 
@@ -46,7 +48,7 @@
 			 (#x60000000 :sht-loos) (#x6ffffff6 :sht-gnu-hash) (#x6ffffff7 :sht-gnu-liblist)
 			 (#x6ffffffd :sht-gnu-verdef) (#x6ffffffe :sht-gnu-verneed)(#x6fffffff :sht-gnu-versym)
 			 (#x70000000 :sht-loproc)
-			 (#x70000005 :sht-mips-debug) (#x7000001e :sht-mips-dwarf)
+			 (#x70000005 :sht-mips-debug) (#x70000006 :sht-mips-reginfo) (#x7000001e :sht-mips-dwarf)
 			 (#x7fffffff :sht-hiproc)
 			 (#x80000000 :sht-louser) (#xffffffff :sht-hiuser)))
    (value flags		(unsigned-byte 32))
@@ -122,3 +124,26 @@
 ;; 	  (with-open-file (str test-file-name :element-type '(unsigned-byte 8))
 ;; 	    (let ((seq (captured-stream:make-captured-stream str)))
 ;; 	      (parse 'ehdr seq)))))
+
+;;;
+;;; No better place for it, as of now -- need for a common executable framework...
+;;;
+(defclass section ()
+  ((name :accessor section-name :initarg :name)
+   (executable-p :accessor section-executable-p :initarg :executable-p))
+  (:documentation "Base section class, do not instantiate."))
+
+(defclass simple-section (section baseless-extent)
+  ()
+  (:documentation "Section with no specified base."))
+
+(defclass standard-section (section extent)
+  ()
+  (:documentation "Standard section with specified base."))
+
+(defun ehdr-sections (ehdr predicate &aux (relocatable-p (eq (ehdr-type ehdr) :et-rel)))
+  (iter (for shdr in (ehdr-shdrs ehdr))
+        (when (funcall predicate shdr)
+          (collect (apply #'make-instance (if relocatable-p 'simple-section 'standard-section)
+                    :data (shdr-data shdr) :name (shdr-name shdr) :executable-p (shdr-executable-p shdr)
+                    (unless relocatable-p `(:base ,(shdr-addr shdr))))))))
