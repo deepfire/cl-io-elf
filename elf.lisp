@@ -4,7 +4,7 @@
    #:phdr #:shdr #:ehdr
    #:section #:simple-section #:standard-section #:section-name #:section-executable-p
    #:shdr-loadable-p #:shdr-executable-p
-   #:ehdr-sections))
+   #:ehdr-sections #:elf-file-section))
 
 (in-package :elf)
 
@@ -147,3 +147,8 @@
           (collect (apply #'make-instance (if relocatable-p 'simple-section 'standard-section)
                     :data (shdr-data shdr) :name (shdr-name shdr) :executable-p (shdr-executable-p shdr)
                     (unless relocatable-p `(:base ,(shdr-addr shdr))))))))
+
+(defun elf-file-section (file name)
+  (let ((sections (ehdr-sections (parse 'ehdr (file-as-vector file)) #'shdr-executable-p)))
+   (or (find name sections :key #'section-name)
+       (error "section ~S not found in ~S, candidates: ~S" name file (mapcar #'section-name sections)))))
