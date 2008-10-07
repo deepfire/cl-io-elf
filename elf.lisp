@@ -2,7 +2,7 @@
   (:use :common-lisp :alexandria :bintype :iterate :pergamum)
   (:export
    #:phdr #:shdr #:ehdr
-   #:section #:simple-section #:standard-section #:section-name #:section-executable-p
+   #:section #:simple-section #:standard-section #:section-name #:section-executable-p #:section-file-offset
    #:shdr-loadable-p #:shdr-executable-p
    #:ehdr-sections #:elf-file-section))
 
@@ -31,9 +31,10 @@
   (:fields
    (indirect		(unsigned-byte 32)
       (value name	(zero-terminated-symbol 32 :elf)
-			:out-of-stream-offset  (+ (path-value *self* :parent
-							      (path-value *self* '(:typed-parent ehdr) 'shstrndx) 'offt)
-						  *direct-value*)))
+			:out-of-stream-offset  (ash (+ (path-value *self* :parent
+                                                                   (path-value *self* '(:typed-parent ehdr) 'shstrndx) 'offt)
+                                                       *direct-value*)
+                                                    3)))
 ;;    (value name-offset   (unsigned-byte 32) :ignore t)
 ;;    (value name          (zero-terminated-symbol 32 :elf)
 ;;                         :out-of-stream-offset  (+ (path-value *self* :parent
@@ -47,25 +48,32 @@
 			 (#xe :sht-init-array) (#xf :sht-fini-array) (#x10 :sht-preinit-array)
 			 (#x60000000 :sht-loos) (#x6ffffff6 :sht-gnu-hash) (#x6ffffff7 :sht-gnu-liblist)
 			 (#x6ffffffd :sht-gnu-verdef) (#x6ffffffe :sht-gnu-verneed)(#x6fffffff :sht-gnu-versym)
-			 (#x70000000 :sht-loproc)
+;; 			 (#x70000000 :sht-loproc)
+                         (#x70000000 :sht-mips-liblist) (#x70000002 :sht-mips-conflict) (#x70000003 :sht-mips-gptab)
+                         (#x70000004 :sht-mips-ucode)
 			 (#x70000005 :sht-mips-debug) (#x70000006 :sht-mips-reginfo) (#x7000001e :sht-mips-dwarf)
 			 (#x7fffffff :sht-hiproc)
 			 (#x80000000 :sht-louser) (#xffffffff :sht-hiuser)))
-   (value flags		(unsigned-byte 32))
-   (value addr		(unsigned-byte 32))
-   (value offt		(unsigned-byte 32))
-   (value size		(unsigned-byte 32))
-   (value link		(unsigned-byte 32))
-   (value info		(unsigned-byte 32))
-   (value addralign	(unsigned-byte 32))
-   (value entsize	(unsigned-byte 32))
-   (value data          (displaced-u8-vector (path-value *self* 'size)) :out-of-stream-offset (path-value *self* 'offt))))
+   (flag shf-write)
+   (flag shf-alloc)
+   (flag shf-execinstr)
+   (value shf-pad        (unsigned-byte 25) :ignore t)
+   (flag shf-mips-gprel)
+   (value shf-pad        (unsigned-byte 3) :ignore t)
+   (value addr		 (unsigned-byte 32))
+   (value offt		 (unsigned-byte 32))
+   (value size		 (unsigned-byte 32))
+   (value link		 (unsigned-byte 32))
+   (value info		 (unsigned-byte 32))
+   (value addralign	 (unsigned-byte 32))
+   (value entsize	 (unsigned-byte 32))
+   (value data           (displaced-u8-vector (path-value *self* 'size)) :out-of-stream-offset (ash (path-value *self* 'offt) 3))))
 
 (defbintype ehdr ()
   (:documentation "ELF header")
   (:type :structure)
   (:fields
-   (match id-magic	(sequence 4 :element-type (unsigned-byte 8) :stride 1 :format :list)
+   (match id-magic	(sequence 4 :element-type (unsigned-byte 8) :stride 8 :format :list)
 	 		(((#x7f #x45 #x4c #x46))) :ignore t)
    (match id-class	(unsigned-byte 8)
 	 		((#x0 :none) (#x1 :32) (#x2 :64)))
@@ -75,7 +83,7 @@
 			 (#x2 (set-endianness :big-endian) :msb)))
    (value id-version	(unsigned-byte 8))
    (value nil		(unsigned-byte 8) :ignore t)
-   (value id-name	(sequence 8 :element-type (unsigned-byte 8) :stride 1 :format :vector))
+   (value id-name	(sequence 8 :element-type (unsigned-byte 8) :stride 8 :format :vector))
    (match type		(unsigned-byte 16)
 			((#x0 :et-none) (#x1 :et-rel) (#x2 :et-exec) (#x3 :et-dyn)
 			 (#x4 :et-core) (#xff00 :et-loproc) (#xffff :et-hiproc)))
@@ -96,25 +104,29 @@
    (value entry		(unsigned-byte 32))
    (value phoff		(unsigned-byte 32))
    (value shoff		(unsigned-byte 32))
-   (value flags		(unsigned-byte 32))
+   (flag ef-mips-noreorder)
+   (flag ef-mips-pic)
+   (flag ef-mips-cpic)
+   (flag ef-mips-arch)
+   (value ef-pad        (unsigned-byte 28) :ignore t)
    (value ehsize	(unsigned-byte 16))
    (value phentsize	(unsigned-byte 16))
    (value phnum		(unsigned-byte 16))
    (value shentsize	(unsigned-byte 16))
    (value shnum		(unsigned-byte 16))
    (value shstrndx	(unsigned-byte 16))
-   (value phdrs		(sequence (path-value *self* 'phnum) :element-type phdr :stride (path-value *self* 'phentsize) :format :list)
-	  		:out-of-stream-offset (path-value *self* 'phoff))
-   (value shdrs		(sequence (path-value *self* 'shnum) :element-type shdr :stride (path-value *self* 'shentsize) :format :list)
-	  		:out-of-stream-offset (path-value *self* 'shoff))))
+   (value phdrs		(sequence (path-value *self* 'phnum) :element-type phdr :stride (ash (path-value *self* 'phentsize) 3) :format :list)
+	  		:out-of-stream-offset (ash (path-value *self* 'phoff) 3))
+   (value shdrs		(sequence (path-value *self* 'shnum) :element-type shdr :stride (ash (path-value *self* 'shentsize) 3) :format :list)
+	  		:out-of-stream-offset (ash (path-value *self* 'shoff) 3))))
 
 (defun shdr-loadable-p (shdr)
-  (with-slots (size flags type) shdr
-    (not (or (and (not (or (ldb-test (byte 1 0) flags) (ldb-test (byte 1 1) flags) (ldb-test (byte 1 2) flags))))
+  (with-slots (size shf-write shf-alloc shf-execinstr type) shdr
+    (not (or (and (not (or shf-write shf-alloc shf-execinstr)))
              (zerop size) (eq type :sht-nobits)))))
 
 (defun shdr-executable-p (shdr)
-  (ldb-test (byte 1 2) (shdr-flags shdr)))
+  (shdr-shf-execinstr shdr))
 
 (mapc (compose #'export-bintype #'bintype) '(ehdr phdr shdr))
 
@@ -130,7 +142,8 @@
 ;;;
 (defclass section ()
   ((name :accessor section-name :initarg :name)
-   (executable-p :accessor section-executable-p :initarg :executable-p))
+   (executable-p :accessor section-executable-p :initarg :executable-p)
+   (file-offset :accessor section-file-offset :initarg :file-offset))
   (:documentation "Base section class, do not instantiate."))
 
 (defclass simple-section (section baseless-extent)
@@ -146,7 +159,7 @@
         (when (funcall predicate shdr)
           (collect (apply #'make-instance (if relocatable-p 'simple-section 'standard-section)
                     :data (shdr-data shdr) :name (shdr-name shdr) :executable-p (shdr-executable-p shdr)
-                    (unless relocatable-p `(:base ,(shdr-addr shdr))))))))
+                    :file-offset (shdr-offt shdr) (unless relocatable-p `(:base ,(shdr-addr shdr))))))))
 
 (defun elf-file-section (file name)
   (let ((sections (ehdr-sections (parse 'ehdr (file-as-vector file)) #'shdr-executable-p)))
