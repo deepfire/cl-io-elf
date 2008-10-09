@@ -163,7 +163,7 @@
                     :file-offset (shdr-offt shdr) (unless relocatable-p `(:base ,(shdr-addr shdr))))))))
 
 (defun elf-file-section (file name)
-  (let ((sections (ehdr-sections (parse 'ehdr (file-as-vector file)) #'shdr-executable-p)))
+  (let ((sections (ehdr-sections (parse 'ehdr (file-as-vector file)) #'identity)))
    (or (find name sections :key #'section-name)
        (error "section ~S not found in ~S, candidates: ~S" name file (mapcar #'section-name sections)))))
 
