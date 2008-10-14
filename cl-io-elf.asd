@@ -1,11 +1,11 @@
 ;;; -*- Mode: Lisp -*-
 
-(defpackage :elf.system
+(defpackage :cl-io-elf.system
   (:use :cl :asdf))
 
-(in-package :elf.system)
+(in-package :cl-io-elf.system)
 
-(defsystem :elf
+(defsystem :cl-io-elf
   :depends-on (:alexandria :bintype :iterate :pergamum)
   :components
   ((:file "packages")
