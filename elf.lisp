@@ -59,7 +59,7 @@
    (value info		 (unsigned-byte 32))
    (value addralign	 (unsigned-byte 32))
    (value entsize	 (unsigned-byte 32))
-   (value data           (displaced-u8-vector (path-value *self* 'size)) :out-of-stream-offset (ash (path-value *self* 'offt) 3))))
+   (value data           (displaced-u8-vector (if (eq (path-value *self* 'type) :sht-nobits) 0 (path-value *self* 'size))) :out-of-stream-offset (ash (path-value *self* 'offt) 3))))
 
 (defbintype ehdr ()
   (:documentation "ELF header")
