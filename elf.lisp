@@ -30,7 +30,7 @@
 (defbintype shdr ()
   (:documentation "ELF section header")
   (:fields
-   (indirect		(unsigned-byte 32)
+   (indirect name	(unsigned-byte 32)
       (value name	(zero-terminated-symbol 32 :elf)
 			:out-of-stream-offset  (ash (+ (path-value *self* :parent
                                                                    (path-value *self* '(:typed-parent ehdr) 'shstrndx) 'offt)
