@@ -8,4 +8,5 @@
 (defsystem :elf
   :depends-on (:alexandria :bintype :iterate :pergamum)
   :components
-  ((:file "elf")))
+  ((:file "packages")
+   (:file "elf" :depends-on ("packages"))))
