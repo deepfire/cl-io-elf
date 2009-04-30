@@ -219,7 +219,7 @@
   (:type :structure)
   (:fields
    (match id-magic	(sequence 4 :element-type (unsigned-byte 8) :stride 8 :format :list)
-          (((#x7f #x45 #x4c #x46))) :ignore t)
+          ((#(#x7f #x45 #x4c #x46))) :ignore t)
    (match id-class	(unsigned-byte 8)
           ((#x0 :none) (#x1 :32) (#x2 :64)))
    (match id-data	(unsigned-byte 8)
