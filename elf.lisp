@@ -63,7 +63,7 @@
   (:prefix shdr-)
   (:fields
    (indirect name	(unsigned-byte 32)
-      (value name	(zero-terminated-symbol 32 :elf)
+      (value name	(terminated-symbol 32 0 :elf)
 			:out-of-stream-offset  (ash (+ (path-value *self* :parent
                                                                    (path-value *self* :parent :parent 'shstrndx) 'offt)
                                                        *direct-value*)
@@ -102,7 +102,7 @@
   (:prefix shdr-)
   (:fields
    (indirect name	(unsigned-byte 32)
-             (value name	(zero-terminated-symbol 32 :elf)
+             (value name	(terminated-symbol 32 0 :elf)
                     :out-of-stream-offset  (ash (+ (path-value *self* :parent
                                                                (path-value *self* :parent :parent 'shstrndx) 'offt)
                                                    *direct-value*)
