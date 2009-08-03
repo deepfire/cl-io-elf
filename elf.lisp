@@ -267,6 +267,13 @@
   ()
   (:documentation "Standard section with specified base."))
 
+(defun remap-section (fn section)
+  "Create a new SECTION of the same class, with data, name, executable-p and
+file-offset slots preserved, but with base remapped with FN."
+  (make-instance (class-of section)
+                 :base (funcall fn (extent-base section)) :data (extent-data section)
+                 :name (section-name section) :executable-p (section-executable-p section) :file-offset (section-file-offset section)))
+
 (defun ehdr-sections (ehdr predicate &aux (relocatable-p (eq (ehdr-type (ehdr-body ehdr)) :et-rel)))
   (iter (for shdr in (ehdr-shdrs (ehdr-body ehdr)))
         (when (funcall predicate shdr)
