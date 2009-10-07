@@ -5,6 +5,7 @@
 *.fas
 *.fasb
 *.fasl
+*.wx32fsl
 
 # win32
 *.manifest
